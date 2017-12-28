@@ -33,6 +33,11 @@ int main(int argc, char **argv)
 	    epsilont = pow(aval*(1.0 + (batchnum+1.0)/bval), -cval); // the learning rate at the t-th iteration
 	    rhot     = 1.0;//1.0*Dapproxtotal/Data.D; 	             // scale by which the summary statistics from the t-th minitach needs to be upgraded
 	    cout<<epsilont<<endl;
+	    if (epsilont>=1)
+	    {
+	    	cout<<"learning rate is no smaller than 1, resetting it to 0.99"<<endl;
+	    	epsilont = 0.99;
+	    }
 		// update local variables
 		LDASGMCMC.updatelocal(rng, BurninITER, CollectionITER, epsilont, rhot, Data);
 		// update global variables   
