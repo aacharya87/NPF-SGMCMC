@@ -2,14 +2,20 @@
 
 ########################################################################
 ## actual command:
-## python -W ignore exploreLDASGMCMC.py 20 1500 500 32 48 16 1.0 0.7 0.7 0.7 0
-## options: 
-## 1. K: maximum number of latent factors  
-## 2: burnin: number of burn-in iterartions for Gibbs sampling
-## 3: collection: number of iterations for collections of samples
-## 4: D: number of documents
-## 5: V: size of vocabulary
-########################################################################
+## python -W ignore exploreLDASGMCMC.py 20 200 200 64 48 10 1.0 0.7 0.7 0.7 0
+## arguments: 
+## 1st. K: maximum number of latent factors  
+## 2nd: burnin: number of burn-in iterartions for Gibbs sampling
+## 3rd: collection: number of iterations for collections of samples
+## 4th: D: maximum number of documents per mini-batch (the actual number may be less)
+## 5th: V: size of vocabulary
+## 6th: N: number of mini-bacthes 
+## 7th: eta: Dirichlet hyper-parameter for topics
+## 8th: aval: variable used in the learning rate
+## 9th: bval: variable used in the learning rate
+## 10th: cval: variable used in the learning rate defined as a*(1+t/b)^(-c)
+## 11th: seedind: flexibility to seed the learning from previous run (support will be added later)
+#######################################################################
 
 import os
 import sys
