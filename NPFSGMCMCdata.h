@@ -6,8 +6,8 @@
 //
 //
 
-#ifndef ____LDASGMCMCdata__
-#define ____LDASGMCMCdata__
+#ifndef ____NPFSGMCMCdata__
+#define ____NPFSGMCMCdata__
 
 #include <sstream>
 #include <string>

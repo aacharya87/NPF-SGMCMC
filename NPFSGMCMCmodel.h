@@ -1,17 +1,17 @@
 //
-//  LDASGMCMCmodel.h
+//  NPFSGMCMCmodel.h
 //  
 //
 //  Created by Ayan Acharya on 9/20/15.
 //
 //
 
-#ifndef ____LDASGMCMCmodel__
-#define ____LDASGMCMCmodel__
+#ifndef ____NPFSGMCMCmodel__
+#define ____NPFSGMCMCmodel__
 
 #include "mathutils.h"
 #include "samplers.h"
-#include "LDASGMCMCdata.h"
+#include "NPFSGMCMCdata.h"
 
 class model
 {
@@ -31,4 +31,4 @@ public:
     void seedmodel(string);
 };
 
-#endif /* defined(____LDASGMCMCmodel__) */
+#endif /* defined(____NPFSGMCMCmodel__) */

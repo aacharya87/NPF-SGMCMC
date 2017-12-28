@@ -1,12 +1,12 @@
 //
-//  LDASGMCMCdata.cpp
+//  NPFSGMCMCdata.cpp
 //  
 //
 //  Created by Ayan Acharya on 9/20/15.
 //
 //
 
-#include "LDASGMCMCdata.h"
+#include "NPFSGMCMCdata.h"
 
 data::data(string trFileName)
 {

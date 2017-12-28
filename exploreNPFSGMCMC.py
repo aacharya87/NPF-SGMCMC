@@ -2,7 +2,7 @@
 
 ########################################################################
 ## actual command:
-## python -W ignore exploreLDASGMCMC.py 20 200 200 64 48 10 1.0 0.7 0.7 0.7 0
+## python -W ignore exploreNPFSGMCMC.py 20 200 200 64 48 10 1.0 0.7 0.7 0.7 0
 ## arguments: 
 ## 1st. K: maximum number of latent factors  
 ## 2nd: burnin: number of burn-in iterartions for Gibbs sampling
@@ -23,8 +23,8 @@ import datetime
 import numpy as np
 from pylab import *
 import matplotlib
-matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
-matplotlib.pyplot.switch_backend('agg')
+#matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
+#matplotlib.pyplot.switch_backend('agg')
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import collections
@@ -61,9 +61,9 @@ def plotresults(opFileName,batchnum,M,thetadk,phiwk,rk):
 	plt.stem(rk)
 	plt.title("rk")	
 
-	plt.savefig(opFileName, dpi=200)
+	#plt.savefig(opFileName, dpi=200)
 
-	##plt.show()	
+	plt.show()	
 	##wait = input('aa')
 
 
@@ -108,12 +108,12 @@ seedind = int(sys.argv[11])
 
 os.system('clear') 
 os.system('rm -rf *.txt')
-os.system('rm -rf LDASGMCMC')
+os.system('rm -rf NPFSGMCMC')
 
 # for experiments with real data explicitly provide "trfile.txt", "predfile1.txt" and "predfile2.txt" 
-execstring  = 'g++ -std=c++0x -o LDASGMCMC LDASGMCMC.cpp LDASGMCMCmodel.cpp LDASGMCMCdata.cpp samplers.cpp mathutils.cpp '
+execstring  = 'g++ -std=c++0x -o NPFSGMCMC NPFSGMCMC.cpp NPFSGMCMCmodel.cpp NPFSGMCMCdata.cpp samplers.cpp mathutils.cpp '
 execstring += '-larmadillo -llapack -lblas -lboost_filesystem -lboost_system `gsl-config --cflags --libs`' 
-print "compiling LDA-SGMCMC .."
+print "compiling NPF-SGMCMC .."
 
 ## create few directories to store the input files and results
 os.system(execstring); currdir = os.getcwd()+'/';
@@ -129,12 +129,12 @@ for n in np.arange(N):
 	writetoFile(srcDir+'/trfile'+str(n+1),M);
 	Dapproxtotal += Dsize;
 
-execstring  = './LDASGMCMC '+srcDir+' '+opDir+' '+str(K)+' '+str(V)+' '+str(BurnIn)+' '+str(Collection)+' '+str(eta)+' '+str(Dapproxtotal)+' ';
+execstring  = './NPFSGMCMC '+srcDir+' '+opDir+' '+str(K)+' '+str(V)+' '+str(BurnIn)+' '+str(Collection)+' '+str(eta)+' '+str(Dapproxtotal)+' ';
 execstring += str(aval)+' '+str(bval)+' '+str(cval)+' '+str(seedind)+' '+str(seedind);
-print "running LDA-SGMCMC .."
+print "running NPF-SGMCMC .."
 os.system(execstring)
 
-print "reading results from LDA-SGMCMC .."
+print "reading results from NPF-SGMCMC .."
 
 numbatches = int(0.25*len([name for name in os.listdir(opDir) if os.path.isfile(os.path.join(opDir, name))]))
 

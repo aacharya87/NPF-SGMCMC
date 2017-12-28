@@ -1,16 +1,16 @@
 //
-//  LDASGMCMCmodel.cpp
+//  NPFSGMCMCmodel.cpp
 //  
 //
 //  Created by Ayan Acharya on 12/25/17.
 //
 //
 
-#include "LDASGMCMCmodel.h"
+#include "NPFSGMCMCmodel.h"
 
 model::model(unsigned int Kval, unsigned int Vval, double etaval)
 {    
-    cout<<"intializing LDA-SGMCMC model .."<<endl;
+    cout<<"intializing NPF-SGMCMC model .."<<endl;
     
     // model hyper-parameters initialized
     azero = 1.0, bzero = 1.0, czero = 1.0, dzero = 1.0, gammazero = 1.0*azero/bzero, c = 1.0; 
@@ -22,7 +22,7 @@ model::model(unsigned int Kval, unsigned int Vval, double etaval)
     // initialization of sufficient statistics
     phiwkss = mat(V,K,fill::zeros); rkss = rowvec(K,fill::zeros); Mk = rowvec(K,fill::zeros); 
 
-    cout<<"LDA-SGMCMC model initialization ends .."<<endl;
+    cout<<"NPF-SGMCMC model initialization ends .."<<endl;
     return;
 };
 
@@ -44,7 +44,7 @@ colvec model::ProjSimplex(colvec Phik)
 
 void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, double epsilont, double rhot, data Data)
 {    
-    cout<<"sampling of local variables for LDA-SGMCMC begins .."<<endl;
+    cout<<"sampling of local variables for NPF-SGMCMC begins .."<<endl;
     CollectionITER = citer; BurninITER = biniter;  
     double param1,param2,val,rksum;
     double *tmpvecparam,*tmpvecvardouble,tmpsum;
@@ -132,7 +132,7 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
     //cout<<Mk<<endl;
     //cout<<M<<endl;
 
-    cout<<"sampling of local variables for LDA-SGMCMC ends .."<<endl;
+    cout<<"sampling of local variables for NPF-SGMCMC ends .."<<endl;
     return;
 };
 

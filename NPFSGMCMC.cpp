@@ -3,8 +3,8 @@
 // Code for LDA-SGMCMC
 
 
-#include "LDASGMCMCdata.h"
-#include "LDASGMCMCmodel.h"
+#include "NPFSGMCMCdata.h"
+#include "NPFSGMCMCmodel.h"
 
 int main(int argc, char **argv)
 {
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
 	cout<<"LDA-SGMCMC main function called successfully.."<<endl;
 
-	model LDASGMCMC(K,V,eta); batchnum = 0;
+	model NPFSGMCMC(K,V,eta); batchnum = 0;
 	for (directory_iterator itr(srcDirname); itr!=directory_iterator(); ++itr)
 	{
 	    trFilename = itr->path().string(); cout <<  trFilename << endl; cout<< (batchnum+1) <<endl;
@@ -39,11 +39,11 @@ int main(int argc, char **argv)
 	    	epsilont = 0.99;
 	    }
 		// update local variables
-		LDASGMCMC.updatelocal(rng, BurninITER, CollectionITER, epsilont, rhot, Data);
+		NPFSGMCMC.updatelocal(rng, BurninITER, CollectionITER, epsilont, rhot, Data);
 		// update global variables   
-		LDASGMCMC.updateglobal(rng, epsilont, rhot);
+		NPFSGMCMC.updateglobal(rng, epsilont, rhot);
 		// print results for LDA-SGMCMC
-		LDASGMCMC.printresults(opDirname, batchnum);
+		NPFSGMCMC.printresults(opDirname, batchnum);
 		batchnum = batchnum + 1;
 	}
 	//gsl_rng_free (rng);
