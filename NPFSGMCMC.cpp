@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	BurninITER = atoi(argv[5]); CollectionITER = atoi(argv[6]); eta = atof(argv[7]); 
 	Dapproxtotal = atoi(argv[8]); aval = atof(argv[9]); bval = atof(argv[10]); cval = atof(argv[11]); seedval = atoi(argv[12]);
 
-	cout<<"LDA-SGMCMC main function called successfully.."<<endl;
+	cout<<"NPF-SGMCMC main function called successfully.."<<endl;
 
 	model NPFSGMCMC(K,V,eta); batchnum = 0;
 	for (directory_iterator itr(srcDirname); itr!=directory_iterator(); ++itr)
