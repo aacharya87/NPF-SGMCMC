@@ -18,7 +18,7 @@ model::model(unsigned int Kval, unsigned int Vval, double etaval)
     
     // initialization of global variables
     xwkss = mat(V,K); xkss = rowvec(K); ellkss = rowvec(K); logpkss = rowvec(K); // the "ss" suffix just highlights that these are averaged over multiple samples, not derived from the final sample  
-    phiwk = mat(V,K); phiwk.fill(1.0/V); M = 1.0; rk = rowvec(K); rk.fill(1.0*gammazero/K); 
+    phiwk = mat(V,K); phiwk.fill(1.0/V); M = 0.0; rk = rowvec(K); rk.fill(1.0*gammazero/K); 
     // initialization of sufficient statistics
     phiwkss = mat(V,K,fill::zeros); rkss = rowvec(K,fill::zeros); Mk = rowvec(K,fill::zeros); 
 
@@ -109,7 +109,7 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
                 thetadk(d,k) = minguard(gsl_ran_gamma(rng,param1,param2));
                 //update sufficient statistics for theta
                 thetadss(d) += thetadk(d,k);
-                if(i>=BurninITER)
+                if (i>=BurninITER)
                 {
                     thetadkss(d,k) += thetadk(d,k)/CollectionITER;
                     // sample CRT variables for update of rk's
@@ -126,11 +126,8 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
     }
     // statistics to be used to update the global variables
     xkss = xkss/BurninITER; xwkss = xwkss/BurninITER; ellkss = ellkss/BurninITER; logpkss = logpkss/BurninITER;
-    Mk   = (1-epsilont)*Mk + epsilont*rhot*xkss; 
-    M    = (1-epsilont)*M + epsilont*rhot*sum(ellkss); // need to check this 
-
-    //cout<<Mk<<endl;
-    //cout<<M<<endl;
+    Mk   = (1.0-epsilont)*Mk + epsilont*rhot*xkss;
+    M    = (1.0-epsilont)*M  + epsilont*rhot*sum(ellkss); 
 
     cout<<"sampling of local variables for NPF-SGMCMC ends .."<<endl;
     return;
@@ -152,11 +149,11 @@ void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
             param3 = (1.0 - param1*(rhot*xkss(k) + eta*V)); param4 = pow(2*param1*phiwk(w,k),0.5); 
             phiwk(w,k) = param2 + param3*phiwk(w,k) + gsl_ran_gaussian(rng, param4); 
         } 
-        // apply the Simplex constraint
+        // project onto the Simplex 
         phiwk.col(k) = ProjSimplex(phiwk.col(k));
         // sample rk
-        param1 = 1.0*(epsilont/M); param2 = param1*(rhot*ellkss(k) + 1.0*gammazero/K); // xkss(k) needs to change
-        param3 = (1.0 - param1*(rhot*logpkss(k) + bzero)); param4 = pow(2*param1*rk(k),0.5); // xkss(k) needs to change  
+        param1 = 1.0*(epsilont/M); param2 = param1*(rhot*ellkss(k) + 1.0*gammazero/K); 
+        param3 = (1.0 - param1*(rhot*logpkss(k) + bzero)); param4 = pow(2*param1*rk(k),0.5); 
         rk(k)  = fabs(param2 + param3*rk(k) + gsl_ran_gaussian(rng, param4));                
     }
     phiwkss += phiwk; rkss += rk;

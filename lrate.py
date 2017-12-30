@@ -9,11 +9,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-aval = 0.1; bval = aval; cval = aval;
-tvals = np.arange(10); T = len(tvals);
+aval = 0.5; bval = 0.8; cval = 0.5;
+tvals = np.arange(100); T = len(tvals);
 epsilonvals = np.zeros(T);
 for t in tvals:
-	epsilonvals[t] = pow(aval*(1+t/bval),-cval);
+	epsilonvals[t] = pow(aval*(1.0+1.0*t/bval),-cval);
 
 plt.plot(tvals,epsilonvals) 
 plt.show();

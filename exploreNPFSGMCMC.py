@@ -61,9 +61,9 @@ def plotresults(opFileName,batchnum,M,thetadk,phiwk,rk):
 	plt.stem(rk)
 	plt.title("rk")	
 
-	#plt.savefig(opFileName, dpi=200)
+	plt.savefig(opFileName, dpi=200)
 
-	plt.show()	
+	#plt.show()	
 	##wait = input('aa')
 
 
@@ -145,7 +145,7 @@ for batchnum in np.arange(numbatches):
 	phiwk   = np.loadtxt(opDir+'/phiwk_'+str(batchnum)+'.txt');
 
 	#print thetadk.shape, phiwk.shape, rk.shape
-	opFileName = opDir+'/'+str(batchnum)+'.png';
+	opFileName = opDir+'/'+str(batchnum+1)+'.png';
 	plotresults(opFileName,batchnum,Mlist[batchnum],thetadk,phiwk,rk)
 
 print "reading of results ends .."
