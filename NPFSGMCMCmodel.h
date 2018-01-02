@@ -24,7 +24,7 @@ class model
 public:
     
     model(unsigned int,unsigned int,double);
-    colvec ProjSimplex(colvec); 
+    colvec ProjSimplex(colvec,colvec); 
     void updatelocal(gsl_rng*,unsigned int,unsigned int,double,double,data);
     void updateglobal(gsl_rng*,double,double);
     void printresults(string,unsigned int);

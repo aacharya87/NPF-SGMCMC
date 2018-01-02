@@ -26,9 +26,9 @@ model::model(unsigned int Kval, unsigned int Vval, double etaval)
     return;
 };
 
-colvec model::ProjSimplex(colvec Phik) 
+colvec model::ProjSimplex(colvec Phik, colvec oldphi) 
 {
-    colvec Phiknew = Phik;
+    colvec Phiknew = Phik + (1.0 - sum(Phik))*oldphi;
     double tmpsum = 0.0; 
     // put the values back to positive orthant
     for (int w=0; w<V; w++)
@@ -138,6 +138,7 @@ void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
     cout<<"sampling starts for global variables .."<< endl;
     double param1,param2,param3,param4;
     unsigned int k,w;
+    colvec oldphi;
     
     // sample global variables
 	for (k=0; k<K; k++)
@@ -147,10 +148,11 @@ void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
         {
             param1 = 1.0*(epsilont/Mk(k)); param2 = param1*(rhot*xwkss(w,k) + eta);
             param3 = (1.0 - param1*(rhot*xkss(k) + eta*V)); param4 = pow(2*param1*phiwk(w,k),0.5); 
+            oldphi = phiwk.col(k);
             phiwk(w,k) = param2 + param3*phiwk(w,k) + gsl_ran_gaussian(rng, param4); 
         } 
         // project onto the Simplex 
-        phiwk.col(k) = ProjSimplex(phiwk.col(k));
+        phiwk.col(k) = ProjSimplex(phiwk.col(k),oldphi);
         // sample rk
         param1 = 1.0*(epsilont/M); param2 = param1*(rhot*ellkss(k) + 1.0*gammazero/K); 
         param3 = (1.0 - param1*(rhot*logpkss(k) + bzero)); param4 = pow(2*param1*rk(k),0.5); 
