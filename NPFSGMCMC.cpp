@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	    	epsilont = 0.99;
 	    }
 		// update local variables
-		NPFSGMCMC.updatelocal(rng, BurninITER, CollectionITER, epsilont, rhot, Data);
+		NPFSGMCMC.updatelocal(rng, BurninITER, CollectionITER, batchnum, epsilont, rhot, Data);
 		// update global variables   
 		NPFSGMCMC.updateglobal(rng, epsilont, rhot);
 		// print results for LDA-SGMCMC

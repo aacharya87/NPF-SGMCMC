@@ -13,14 +13,14 @@ model::model(unsigned int Kval, unsigned int Vval, double etaval)
     cout<<"intializing NPF-SGMCMC model .."<<endl;
     
     // model hyper-parameters initialized
-    azero = 1.0, bzero = 1.0, czero = 1.0, dzero = 1.0, gammazero = 1.0*azero/bzero, c = 1.0; 
+    azero = 1.0, bzero = 1.0, czero = 1.0, dzero = 1.0, gammazero = 1.0, c = 1.0; 
     K = Kval; V = Vval; eta = etaval;   
     
     // initialization of global variables
-    xwkss = mat(V,K); xkss = rowvec(K); ellkss = rowvec(K); logpkss = rowvec(K); // the "ss" suffix just highlights that these are averaged over multiple samples, not derived from the final sample  
-    phiwk = mat(V,K); phiwk.fill(1.0/V); M = 0.0; rk = rowvec(K); rk.fill(1.0*gammazero/K); 
+    xwkss = mat(V,K); xkss = rowvec(K); ellkss = rowvec(K); logpkss = rowvec(K); // the "ss" suffix just highlights that these terms are averaged over multiple samples, not derived from the final sample  
+    phiwk = mat(V,K); phiwk.fill(1.0/V); M = 0.0; rk = rowvec(K); rk.fill(1.0*gammazero/K); rksum = sum(rk);
     // initialization of sufficient statistics
-    phiwkss = mat(V,K,fill::zeros); rkss = rowvec(K,fill::zeros); Mk = rowvec(K,fill::zeros); 
+    phiwkss = mat(V,K,fill::zeros); rkss = rowvec(K,fill::zeros); Mk = rowvec(K,fill::zeros); // M and Mk get re-initialized afterwards
 
     cout<<"NPF-SGMCMC model initialization ends .."<<endl;
     return;
@@ -33,6 +33,8 @@ colvec model::ProjSimplex(colvec Phik, colvec oldphi)
     // put the values back to positive orthant
     for (int w=0; w<V; w++)
     {
+        //if (Phiknew(w)<0)
+        //    Phiknew(w) = -Phiknew(w);        // added later
         if (Phiknew(w)<LOWLIMIT)
             Phiknew(w) = LOWLIMIT;
         tmpsum += Phiknew(w);
@@ -42,11 +44,11 @@ colvec model::ProjSimplex(colvec Phik, colvec oldphi)
     return Phiknew;
 }
 
-void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, double epsilont, double rhot, data Data)
+void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, unsigned int batchnum, double epsilont, double rhot, data Data)
 {    
     cout<<"sampling of local variables for NPF-SGMCMC begins .."<<endl;
     CollectionITER = citer; BurninITER = biniter;  
-    double param1,param2,val,rksum;
+    double param1,param2,val;
     double *tmpvecparam,*tmpvecvardouble,tmpsum;
     unsigned int *tmpvecvarint;
     unsigned int k,d,w;
@@ -55,11 +57,11 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
     // size of the current mini-batch
     D = Data.D; 
     // initialization of local latent variables
-    thetadk = mat(D,K); thetadk.fill(1.0/K); cd = rowvec(D,fill::ones); xdk = mat(D,K); 
+    thetadk = mat(D,K); thetadk.fill(1.0/K); cd = rowvec(D); cd.fill(10.0); xdk = mat(D,K); 
     // initialization of sufficient statistics
-	thetadkss = mat(D,K,fill::zeros); thetadss = rowvec(D); rksum = sum(rk);
+	thetadkss = mat(D,K,fill::zeros); thetadss = rowvec(D); 
     // these have to be reset, as information only passes through Mk's from one mini-batch to the next 
-    xkss.fill(0); xwkss.fill(0); ellkss.fill(0.0); logpkss.fill(0.0);
+    xkss.fill(0.0); xwkss.fill(0.0); ellkss.fill(0.0); logpkss.fill(0.0);
 
     cout<<"number of documents: "<<D<<endl;
     cout<<"number of words: "<<V<<endl;
@@ -71,17 +73,18 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
         if(i==0 || (i+1)%100 == 0)
             cout<< "Iteration: "<<(i+1)<<" of "<<(CollectionITER + BurninITER)<<", K: "<<K<<endl;        
         // reset few statistics first
-        thetadss.fill(0.0); xdk.fill(0); 
-        // sampling of latent counts; O(SK)
+        xdk.fill(0); 
         for (d=0; d<D; d++)
         {
+            // sampling of latent counts; O(SK)
             tmpsp = Data.Xdw.row(d); start = tmpsp.begin(); end = tmpsp.end();
             for(it = start; it != end; ++it)
             {
                 w = it.col(); val = (*it); tmpvecvarint = new unsigned int [K]; tmpvecparam = new double [K]; tmpsum = 0.0;
                 for (k=0; k<K; k++)
                 {
-                    param1 = thetadk(d,k); param2 = phiwk(w,k); *(tmpvecparam+k) = param1*param2; tmpsum += *(tmpvecparam+k);
+                    param1 = thetadk(d,k); param2 = phiwk(w,k); 
+                    *(tmpvecparam+k) = param1*param2; tmpsum += *(tmpvecparam+k);
                 }
                 //normalization
                 for (k=0; k<K; k++)
@@ -93,19 +96,17 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
                     xdk(d,k) += *(tmpvecvarint+k); 
                     if (i>=BurninITER)
                     {
-                        xkss(k) += *(tmpvecvarint+k); xwkss(w,k) += *(tmpvecvarint+k); 
+                        xkss(k)    += 1.0*(*(tmpvecvarint+k))/CollectionITER; 
+                        xwkss(w,k) += 1.0*(*(tmpvecvarint+k))/CollectionITER; 
                     }
                 }
                 free(tmpvecvarint); free(tmpvecparam);
             }
-        }
-        // sampling of thetadk O(DK)
-        for (k=0; k<K; k++)
-        {
-            for (d=0; d<D; d++)
+            // sampling of thetadk O(DK)
+            thetadss(d) = 0.0;
+            for (k=0; k<K; k++)
             {
-                // sample thetadk
-                param1       = rk(k) + xdk(d,k); param2 = 1.0/(cd(d) + 1.0);
+                param1 = rk(k) + xdk(d,k); param2 = 1.0/(cd(d) + 1.0);
                 thetadk(d,k) = minguard(gsl_ran_gamma(rng,param1,param2));
                 //update sufficient statistics for theta
                 thetadss(d) += thetadk(d,k);
@@ -113,21 +114,27 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
                 {
                     thetadkss(d,k) += thetadk(d,k)/CollectionITER;
                     // sample CRT variables for update of rk's
-                    ellkss(k) += sampleCRT(rng,xdk(d,k),rk(k)); logpkss(k) += logguard(1.0 + 1.0/cd(d));   
+                    ellkss(k)  += 1.0*sampleCRT(rng,xdk(d,k),rk(k))/CollectionITER; 
+                    logpkss(k) += 1.0*logguard(1.0 + 1.0/cd(d))/CollectionITER;   
                 }
             }   
-        }   
-        // sample cd; O(D)
-        for (d=0; d<D; d++)
-        {
+            // sampling of cd; O(D)
             param1 = (czero + rksum); param2 = 1.0/(dzero + thetadss(d));
-            cd(d)  = minguard(gsl_ran_gamma(rng,param1,param2));
+            cd(d)  = minguard(gsl_ran_gamma(rng,param1,param2));            
         }
     }
+
     // statistics to be used to update the global variables
-    xkss = xkss/BurninITER; xwkss = xwkss/BurninITER; ellkss = ellkss/BurninITER; logpkss = logpkss/BurninITER;
-    Mk   = (1.0-epsilont)*Mk + epsilont*rhot*xkss;
-    M    = (1.0-epsilont)*M  + epsilont*rhot*sum(ellkss); 
+    xkss = rhot*xkss; xwkss = rhot*xwkss; ellkss = rhot*ellkss; logpkss = rhot*logpkss;
+    if (batchnum==0)
+    {
+        Mk = xkss; M = sum(logpkss); // need to check this term
+    }
+    else
+    {
+        Mk = (1.0-epsilont)*Mk + epsilont*xkss; 
+        M  = (1.0-epsilont)*M  + epsilont*sum(logpkss); // need to check this term
+    }
 
     cout<<"sampling of local variables for NPF-SGMCMC ends .."<<endl;
     return;
@@ -139,25 +146,34 @@ void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
     double param1,param2,param3,param4;
     unsigned int k,w;
     colvec oldphi;
-    
+
+    rksum = 0.0;
     // sample global variables
 	for (k=0; k<K; k++)
     {                    
         // sample phiwk
+        oldphi = phiwk.col(k); param1 = 1.0*epsilont/Mk(k);
         for(w=0; w<V; w++)
         {
-            param1 = 1.0*(epsilont/Mk(k)); param2 = param1*(rhot*xwkss(w,k) + eta);
-            param3 = (1.0 - param1*(rhot*xkss(k) + eta*V)); param4 = pow(2*param1*phiwk(w,k),0.5); 
-            oldphi = phiwk.col(k);
-            phiwk(w,k) = param2 + param3*phiwk(w,k) + gsl_ran_gaussian(rng, param4); 
+            param2 = param1*(xwkss(w,k) + 1.0*eta);
+            param3 = (1.0 - param1*(xkss(k) + eta*V)); 
+            param4 = pow(2*param1*phiwk(w,k),0.5); // variance
+            phiwk(w,k) = param2 + param3*phiwk(w,k) + param4*gsl_ran_gaussian(rng, 1.0); 
         } 
         // project onto the Simplex 
         phiwk.col(k) = ProjSimplex(phiwk.col(k),oldphi);
         // sample rk
-        param1 = 1.0*(epsilont/M); param2 = param1*(rhot*ellkss(k) + 1.0*gammazero/K); 
-        param3 = (1.0 - param1*(rhot*logpkss(k) + bzero)); param4 = pow(2*param1*rk(k),0.5); 
-        rk(k)  = fabs(param2 + param3*rk(k) + gsl_ran_gaussian(rng, param4));                
+        param1 = 1.0*epsilont/M; 
+        param2 = param1*(ellkss(k) + 1.0*gammazero/K); 
+        param3 = (1.0 - param1*(logpkss(k) + bzero)); 
+        param4 = pow(2*param1*rk(k),0.5); // variance
+        rk(k)  = fabs(param2 + param3*rk(k) + param4*gsl_ran_gaussian(rng, 1.0));
+        //cout<<"\t"<<param1<<"\t"<<param2<<"\t"<<param3<<"\t"<<param4<<endl;
+        rksum += rk(k);              
     }
+    //cout<<rk<<endl;
+    //cout<<cd<<endl;
+    //cout<<logpkss<<endl;
     phiwkss += phiwk; rkss += rk;
     cout<<"sampling terminates for global variables .."<< endl;;
 };
@@ -178,8 +194,12 @@ void model::printresults(string opDirname, unsigned int batchnum)
             opfile1<<thetadkss(d,k)<<"\t";
         opfile1<<endl;
         for(w=0;w<V;w++)
+        {
+            //opfile2<<phiwk(w,k)<<"\t";
             opfile2<<phiwkss(w,k)/(batchnum+1)<<"\t"; // the normalization is necessary
+        }
         opfile2<<endl;   
+        //opfile3<<rk(k)<<"\t";
         opfile3<<rkss(k)/(batchnum+1)<<"\t";     // the normalization is necessary
     }	
 	opfile1.close(); opfile2.close(); opfile3.close();
