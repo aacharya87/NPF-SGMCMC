@@ -13,7 +13,7 @@
 ## 7th: eta: Dirichlet hyper-parameter for topics
 ## 8th: aval: variable used in the learning rate
 ## 9th: bval: variable used in the learning rate
-## 10th: cval: variable used in the learning rate defined as a*(1+t/b)^(-c)
+## 10th: cval: variable used in the learning rate defined as (a+t/b)^(-c)
 ## 11th: seedind: flexibility to seed the learning from previous run (support will be added later)
 #######################################################################
 
@@ -66,6 +66,12 @@ def plotresults(opFileName,batchnum,M,thetadk,phiwk,rk):
 	#plt.show()	
 	##wait = input('aa')
 
+def createrandmat(D,V):
+	
+	M = np.random.random_integers(5, size=(D,V));
+	M[np.nonzero(M<2)] = 0;
+		
+	return M;
 
 def createsynthmat(D,V):
 	
@@ -124,8 +130,10 @@ os.mkdir(workDir); os.mkdir(srcDir); os.mkdir(opDir); Mlist = [];
 ## create the training data
 Dapproxtotal = 0;
 for n in np.arange(N):
-	Dsize = np.random.randint(int(0.5*D), high=D);
-	M = createsynthmat(Dsize,V); Mlist.append(M);
+	Dsize = D; ##np.random.randint(int(0.5*D), high=D);
+	#M = createrandmat(Dsize,V);
+	M = createsynthmat(Dsize,V); 
+	Mlist.append(M);
 	writetoFile(srcDir+'/trfile'+str(n+1),M);
 	Dapproxtotal += Dsize;
 

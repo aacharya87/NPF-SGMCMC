@@ -33,8 +33,8 @@ colvec model::ProjSimplex(colvec Phik, colvec oldphi)
     // put the values back to positive orthant
     for (int w=0; w<V; w++)
     {
-        //if (Phiknew(w)<0)
-        //    Phiknew(w) = -Phiknew(w);        // added later
+        if (Phiknew(w)<=0)
+            Phiknew(w) = fabs(Phiknew(w));        
         if (Phiknew(w)<LOWLIMIT)
             Phiknew(w) = LOWLIMIT;
         tmpsum += Phiknew(w);
@@ -163,17 +163,22 @@ void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
         // project onto the Simplex 
         phiwk.col(k) = ProjSimplex(phiwk.col(k),oldphi);
         // sample rk
-        param1 = 1.0*epsilont/M; 
-        param2 = param1*(ellkss(k) + 1.0*gammazero/K); 
-        param3 = (1.0 - param1*(logpkss(k) + bzero)); 
-        param4 = pow(2*param1*rk(k),0.5); // variance
-        rk(k)  = fabs(param2 + param3*rk(k) + param4*gsl_ran_gaussian(rng, 1.0));
-        //cout<<"\t"<<param1<<"\t"<<param2<<"\t"<<param3<<"\t"<<param4<<endl;
+        param2 = epsilont*((ellkss(k) + 1.0*gammazero/K) - rk(k)*(logpkss(k) + bzero))/M; 
+        param4 = pow(2*epsilont*rk(k)/M,0.5); // variance
+        rk(k)  = fabs(rk(k) + param2 + param4*gsl_ran_gaussian(rng, 1.0));
+        //cout<<epsilont<<"\t"<<ellkss(k)<<"\t"<<param4<<"\t"<<M<<endl;
         rksum += rk(k);              
     }
+
     //cout<<rk<<endl;
     //cout<<cd<<endl;
-    //cout<<logpkss<<endl;
+    //cout.precision(3);
+    //cout<<setprecision(3);
+    cout<< "learning rate: " << epsilont << endl;
+    cout.precision(5);
+    cout << fixed;
+    cout<< ellkss <<endl;
+    cout<< logpkss <<endl;
     phiwkss += phiwk; rkss += rk;
     cout<<"sampling terminates for global variables .."<< endl;;
 };

@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 	    trFilename = itr->path().string(); cout <<  trFilename << endl; cout<< (batchnum+1) <<endl;
 		// data loading
 		data Data(trFilename);
-	    epsilont = pow(aval*(1.0 + (batchnum+1.0)/bval), -cval); // the learning rate at the t-th iteration
+	    epsilont = pow(aval + (batchnum+1.0)/bval, -cval)/pow(aval + 1.0/bval, -cval);   // the learning rate at the t-th iteration
 	    rhot     = 1.0*Dapproxtotal/Data.D; 	             // scale by which the summary statistics from the t-th minitach needs to be upgraded
 	    cout<<epsilont<<endl;
 	    if (epsilont>=1)

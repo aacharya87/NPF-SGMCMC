@@ -11,17 +11,11 @@
 double logguard(double m)
 {
     // provides guard against log(0)
-    if(m<LOWLIMIT)
-        return log(LOWLIMIT);
-    else
-        return log(m);
+    return log(max(LOWLIMIT,m));
 };
 
 double minguard(double m)
 {
     // provides guard against number lower than LOWLIMIT
-    if(m<LOWLIMIT)
-        return (LOWLIMIT);
-    else
-        return m;
+    return max(LOWLIMIT,m);
 };
