@@ -16,9 +16,9 @@
 class model
 {
     unsigned int D,V,K,S,CollectionITER,BurninITER;
-    double azero,bzero,czero,dzero,c,eta,gammazero,M,rksum;
+    double azero,bzero,czero,dzero,c,eta,gammazero,M,rksum,logpdss;
     mat thetadk,thetatestdk,thetadkss,thetatestdkss,phiwk,phiwkss;
-    rowvec thetakss,thetadss,cd,rk,rkss,xkss,Mk,ellkss,logpkss;
+    rowvec thetakss,thetadss,cd,rk,rkss,xkss,Mk,ellkss;
     mat xwkss,xdk;
     
 public:

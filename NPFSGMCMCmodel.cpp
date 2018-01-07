@@ -17,7 +17,7 @@ model::model(unsigned int Kval, unsigned int Vval, double etaval)
     K = Kval; V = Vval; eta = etaval;   
     
     // initialization of global variables
-    xwkss = mat(V,K); xkss = rowvec(K); ellkss = rowvec(K); logpkss = rowvec(K); // the "ss" suffix just highlights that these terms are averaged over multiple samples, not derived from the final sample  
+    xwkss = mat(V,K); xkss = rowvec(K); ellkss = rowvec(K); // the "ss" suffix just highlights that these terms are averaged over multiple samples, not derived from the final sample  
     phiwk = mat(V,K); phiwk.fill(1.0/V); M = 0.0; rk = rowvec(K); rk.fill(1.0*gammazero/K); rksum = sum(rk);
     // initialization of sufficient statistics
     phiwkss = mat(V,K,fill::zeros); rkss = rowvec(K,fill::zeros); Mk = rowvec(K,fill::zeros); // M and Mk get re-initialized afterwards
@@ -59,9 +59,9 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
     // initialization of local latent variables
     thetadk = mat(D,K); thetadk.fill(1.0/K); cd = rowvec(D); cd.fill(10.0); xdk = mat(D,K); 
     // initialization of sufficient statistics
-	thetadkss = mat(D,K,fill::zeros); thetadss = rowvec(D); 
+	thetadkss = mat(D,K,fill::zeros); thetadss = rowvec(D);  
     // these have to be reset, as information only passes through Mk's from one mini-batch to the next 
-    xkss.fill(0.0); xwkss.fill(0.0); ellkss.fill(0.0); logpkss.fill(0.0);
+    xkss.fill(0.0); xwkss.fill(0.0); ellkss.fill(0.0); logpdss = 0.0;
 
     cout<<"number of documents: "<<D<<endl;
     cout<<"number of words: "<<V<<endl;
@@ -73,11 +73,11 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
         if(i==0 || (i+1)%100 == 0)
             cout<< "Iteration: "<<(i+1)<<" of "<<(CollectionITER + BurninITER)<<", K: "<<K<<endl;        
         // reset few statistics first
-        xdk.fill(0); 
+        xdk.fill(0.0); 
         for (d=0; d<D; d++)
         {
             // sampling of latent counts; O(SK)
-            tmpsp = Data.Xdw.row(d); start = tmpsp.begin(); end = tmpsp.end();
+            tmpsp = Data.Xdw.row(d); start = tmpsp.begin(); end = tmpsp.end(); thetadss(d) = 0.0;
             for(it = start; it != end; ++it)
             {
                 w = it.col(); val = (*it); tmpvecvarint = new unsigned int [K]; tmpvecparam = new double [K]; tmpsum = 0.0;
@@ -93,47 +93,47 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
                 // update sufficient statistics of latent rates
                 for (k=0; k<K; k++)
                 {
-                    xdk(d,k) += *(tmpvecvarint+k); 
+                    xdk(d,k) += *(tmpvecvarint+k);
                     if (i>=BurninITER)
                     {
-                        xkss(k)    += 1.0*(*(tmpvecvarint+k))/CollectionITER; 
-                        xwkss(w,k) += 1.0*(*(tmpvecvarint+k))/CollectionITER; 
+                        xkss(k)    += 1.0*(*(tmpvecvarint+k)); 
+                        xwkss(w,k) += 1.0*(*(tmpvecvarint+k)); 
                     }
                 }
                 free(tmpvecvarint); free(tmpvecparam);
             }
             // sampling of thetadk O(DK)
-            thetadss(d) = 0.0;
             for (k=0; k<K; k++)
             {
                 param1 = rk(k) + xdk(d,k); param2 = 1.0/(cd(d) + 1.0);
-                thetadk(d,k) = minguard(gsl_ran_gamma(rng,param1,param2));
+                thetadk(d,k) = minguard(gsl_ran_gamma(rng,param1,param2)); thetadss(d) += thetadk(d,k); 
                 //update sufficient statistics for theta
-                thetadss(d) += thetadk(d,k);
                 if (i>=BurninITER)
                 {
                     thetadkss(d,k) += thetadk(d,k)/CollectionITER;
                     // sample CRT variables for update of rk's
-                    ellkss(k)  += 1.0*sampleCRT(rng,xdk(d,k),rk(k))/CollectionITER; 
-                    logpkss(k) += 1.0*logguard(1.0 + 1.0/cd(d))/CollectionITER;   
+                    ellkss(k)  += 1.0*sampleCRT(rng,xdk(d,k),rk(k)); 
                 }
             }   
             // sampling of cd; O(D)
             param1 = (czero + rksum); param2 = 1.0/(dzero + thetadss(d));
-            cd(d)  = minguard(gsl_ran_gamma(rng,param1,param2));            
+            cd(d)  = minguard(gsl_ran_gamma(rng,param1,param2));   
+            if (i>=BurninITER)
+                logpdss += 1.0*logguard(1.0 + 1.0/cd(d));              
         }
     }
 
     // statistics to be used to update the global variables
-    xkss = rhot*xkss; xwkss = rhot*xwkss; ellkss = rhot*ellkss; logpkss = rhot*logpkss;
+    xkss   = rhot*xkss/CollectionITER; xwkss = rhot*xwkss/CollectionITER; 
+    ellkss = rhot*ellkss/CollectionITER; logpdss = rhot*logpdss/CollectionITER;
     if (batchnum==0)
     {
-        Mk = xkss; M = sum(logpkss); // need to check this term
+        Mk = xkss; M = logpdss; 
     }
     else
     {
         Mk = (1.0-epsilont)*Mk + epsilont*xkss; 
-        M  = (1.0-epsilont)*M  + epsilont*sum(logpkss); // need to check this term
+        M  = (1.0-epsilont)*M  + epsilont*logpdss; 
     }
 
     cout<<"sampling of local variables for NPF-SGMCMC ends .."<<endl;
@@ -163,22 +163,13 @@ void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
         // project onto the Simplex 
         phiwk.col(k) = ProjSimplex(phiwk.col(k),oldphi);
         // sample rk
-        param2 = epsilont*((ellkss(k) + 1.0*gammazero/K) - rk(k)*(logpkss(k) + bzero))/M; 
+        param2 = epsilont*((ellkss(k) + 1.0*gammazero/K) - rk(k)*(logpdss + bzero))/M; 
         param4 = pow(2*epsilont*rk(k)/M,0.5); // variance
         rk(k)  = fabs(rk(k) + param2 + param4*gsl_ran_gaussian(rng, 1.0));
-        //cout<<epsilont<<"\t"<<ellkss(k)<<"\t"<<param4<<"\t"<<M<<endl;
         rksum += rk(k);              
     }
 
-    //cout<<rk<<endl;
-    //cout<<cd<<endl;
-    //cout.precision(3);
-    //cout<<setprecision(3);
     cout<< "learning rate: " << epsilont << endl;
-    cout.precision(5);
-    cout << fixed;
-    cout<< ellkss <<endl;
-    cout<< logpkss <<endl;
     phiwkss += phiwk; rkss += rk;
     cout<<"sampling terminates for global variables .."<< endl;;
 };
@@ -199,12 +190,8 @@ void model::printresults(string opDirname, unsigned int batchnum)
             opfile1<<thetadkss(d,k)<<"\t";
         opfile1<<endl;
         for(w=0;w<V;w++)
-        {
-            //opfile2<<phiwk(w,k)<<"\t";
             opfile2<<phiwkss(w,k)/(batchnum+1)<<"\t"; // the normalization is necessary
-        }
         opfile2<<endl;   
-        //opfile3<<rk(k)<<"\t";
         opfile3<<rkss(k)/(batchnum+1)<<"\t";     // the normalization is necessary
     }	
 	opfile1.close(); opfile2.close(); opfile3.close();

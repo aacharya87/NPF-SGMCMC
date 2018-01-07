@@ -31,9 +31,16 @@ import collections
 from operator import itemgetter
 ##%matplotlib inline
 
+def normalizemat(A,axisnum):
+	if axisnum==1:
+		A = A/A.sum(axis=1)[:,np.newaxis]; 
+	else:
+		A = A/A.sum(axis=0)[np.newaxis,:]; 			
+	return A
+
 def plotresults(opFileName,batchnum,M,thetadk,phiwk,rk):
 
-	numL = 2; numW = 3;
+	numL = 3; numW = 3;
 	Assignment = thetadk.transpose(); Mest = np.dot(Assignment,phiwk);
 
 	plt.figure((batchnum+1));
@@ -53,11 +60,19 @@ def plotresults(opFileName,batchnum,M,thetadk,phiwk,rk):
 	colorbar()
 
 	sp = plt.subplot(numL,numW,4)	
+	tmp = np.dot(np.diag(rk),phiwk);
+	tmp = tmp.transpose(); 
+	tmp = normalizemat(tmp,1);
+	plt.imshow(tmp)
+	plt.title("rk*phiwk")
+	colorbar()
+
+	sp = plt.subplot(numL,numW,6)	
 	plt.imshow(phiwk.transpose())
 	plt.title("phiwk")
 	colorbar()
 
-	sp = plt.subplot(numL,numW,6)	
+	sp = plt.subplot(numL,numW,8)	
 	plt.stem(rk)
 	plt.title("rk")	
 
@@ -130,8 +145,7 @@ os.mkdir(workDir); os.mkdir(srcDir); os.mkdir(opDir); Mlist = [];
 ## create the training data
 Dapproxtotal = 0;
 for n in np.arange(N):
-	Dsize = D; ##np.random.randint(int(0.5*D), high=D);
-	#M = createrandmat(Dsize,V);
+	Dsize = np.random.randint(int(0.5*D), high=D);
 	M = createsynthmat(Dsize,V); 
 	Mlist.append(M);
 	writetoFile(srcDir+'/trfile'+str(n+1),M);
