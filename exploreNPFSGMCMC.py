@@ -40,7 +40,7 @@ def normalizemat(A,axisnum):
 
 def plotresults(opFileName,batchnum,M,thetadk,phiwk,rk):
 
-	numL = 3; numW = 3;
+	numL = 2; numW = 3;
 	Assignment = thetadk.transpose(); Mest = np.dot(Assignment,phiwk);
 
 	plt.figure((batchnum+1));
@@ -59,20 +59,20 @@ def plotresults(opFileName,batchnum,M,thetadk,phiwk,rk):
 	plt.title("thetadk")
 	colorbar()
 
-	sp = plt.subplot(numL,numW,4)	
+	'''sp = plt.subplot(numL,numW,4)	
 	tmp = np.dot(np.diag(rk),phiwk);
 	tmp = tmp.transpose(); 
 	tmp = normalizemat(tmp,1);
 	plt.imshow(tmp)
 	plt.title("rk*phiwk")
-	colorbar()
+	colorbar()'''
 
-	sp = plt.subplot(numL,numW,6)	
+	sp = plt.subplot(numL,numW,4)	
 	plt.imshow(phiwk.transpose())
 	plt.title("phiwk")
 	colorbar()
 
-	sp = plt.subplot(numL,numW,8)	
+	sp = plt.subplot(numL,numW,6)	
 	plt.stem(rk)
 	plt.title("rk")	
 

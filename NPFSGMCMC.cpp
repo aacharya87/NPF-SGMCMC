@@ -27,12 +27,15 @@ int main(int argc, char **argv)
 	model NPFSGMCMC(K,V,eta); batchnum = 0;
 	for (directory_iterator itr(srcDirname); itr!=directory_iterator(); ++itr)
 	{
-	    trFilename = itr->path().string(); cout <<  trFilename << endl; cout<< (batchnum+1) <<endl;
+	    trFilename = itr->path().string(); 
 		// data loading
 		data Data(trFilename);
 	    epsilont = pow(aval + (batchnum+1.0)/bval, -cval)/pow(aval + 1.0/bval, -cval);   // the learning rate at the t-th iteration
 	    rhot     = 1.0*Dapproxtotal/Data.D; 	             // scale by which the summary statistics from the t-th minitach needs to be upgraded
-	    cout<<epsilont<<endl;
+	    cout<< "filename: " << trFilename << endl; 
+	    cout<< "batch number: "<<(batchnum+1) <<endl;
+	    cout<< "learning rate: " << epsilont << endl;
+	    cout<< "rhot: " << rhot << endl;
 	    if (epsilont>=1)
 	    {
 	    	cout<<"learning rate is no smaller than 1, resetting it to 0.99"<<endl;

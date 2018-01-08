@@ -30,11 +30,9 @@ colvec model::ProjSimplex(colvec Phik, colvec oldphi)
 {
     colvec Phiknew = Phik + (1.0 - sum(Phik))*oldphi;
     double tmpsum = 0.0; 
-    // put the values back to positive orthant
+    // put the values back to positive orthant and provide guard for extremely low values
     for (int w=0; w<V; w++)
-    {
-        if (Phiknew(w)<=0)
-            Phiknew(w) = fabs(Phiknew(w));        
+    {      
         if (Phiknew(w)<LOWLIMIT)
             Phiknew(w) = LOWLIMIT;
         tmpsum += Phiknew(w);
@@ -96,8 +94,8 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
                     xdk(d,k) += *(tmpvecvarint+k);
                     if (i>=BurninITER)
                     {
-                        xkss(k)    += 1.0*(*(tmpvecvarint+k)); 
-                        xwkss(w,k) += 1.0*(*(tmpvecvarint+k)); 
+                        xkss(k)    += *(tmpvecvarint+k); 
+                        xwkss(w,k) += *(tmpvecvarint+k); 
                     }
                 }
                 free(tmpvecvarint); free(tmpvecparam);
@@ -143,10 +141,9 @@ void model::updatelocal(gsl_rng *rng, unsigned int citer, unsigned int biniter, 
 void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
 {
     cout<<"sampling starts for global variables .."<< endl;
-    double param1,param2,param3,param4;
+    double param1,param2;
     unsigned int k,w;
     colvec oldphi;
-
     rksum = 0.0;
     // sample global variables
 	for (k=0; k<K; k++)
@@ -155,21 +152,18 @@ void model::updateglobal(gsl_rng *rng, double epsilont, double rhot)
         oldphi = phiwk.col(k); param1 = 1.0*epsilont/Mk(k);
         for(w=0; w<V; w++)
         {
-            param2 = param1*(xwkss(w,k) + 1.0*eta);
-            param3 = (1.0 - param1*(xkss(k) + eta*V)); 
-            param4 = pow(2*param1*phiwk(w,k),0.5); // variance
-            phiwk(w,k) = param2 + param3*phiwk(w,k) + param4*gsl_ran_gaussian(rng, 1.0); 
+            param1     = epsilont*((xwkss(w,k) + eta) - phiwk(w,k)*(xkss(k) + eta*V))/Mk(k);
+            param2     = pow(2*epsilont*phiwk(w,k)/Mk(k),0.5); // variance
+            phiwk(w,k) = phiwk(w,k) + param1 + param2*gsl_ran_gaussian(rng, 1.0); 
         } 
         // project onto the Simplex 
         phiwk.col(k) = ProjSimplex(phiwk.col(k),oldphi);
         // sample rk
-        param2 = epsilont*((ellkss(k) + 1.0*gammazero/K) - rk(k)*(logpdss + bzero))/M; 
-        param4 = pow(2*epsilont*rk(k)/M,0.5); // variance
-        rk(k)  = fabs(rk(k) + param2 + param4*gsl_ran_gaussian(rng, 1.0));
+        param1 = epsilont*((ellkss(k) + 1.0*gammazero/K) - rk(k)*(logpdss + bzero))/M; 
+        param2 = pow(2*epsilont*rk(k)/M,0.5); // variance
+        rk(k)  = fabs(rk(k) + param1 + param2*gsl_ran_gaussian(rng, 1.0));
         rksum += rk(k);              
     }
-
-    cout<< "learning rate: " << epsilont << endl;
     phiwkss += phiwk; rkss += rk;
     cout<<"sampling terminates for global variables .."<< endl;;
 };

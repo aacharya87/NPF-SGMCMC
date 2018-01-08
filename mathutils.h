@@ -20,7 +20,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
 
-#define LOWLIMIT 1e-30
+#define LOWLIMIT 1e-15
 #define UPPERLIMIT 20
 
 using namespace std;

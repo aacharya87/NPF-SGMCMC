@@ -15,12 +15,12 @@ data::data(string trFileName)
             
     int count, d, w, p, q, tmp1, tmp2, tmp3, tmp4, newdoc;
     
-    cout<<"loading of data starts for LDA-SGMCMC .."<<endl;
+    cout<<"loading of data starts for NPF-SGMCMC .."<<endl;
     
     getline(trFile, line); istringstream iss1(line); iss1 >> D >> V >> S; 
     Xdw = sp_mat(D,V); 
     
-    cout<<D<<"\t"<<V<<"\t"<<endl;    
+    //cout<<D<<"\t"<<V<<"\t"<<endl;    
     
     tmp1 = 0; tmp3 = -1; d = 0;
     while (getline(trFile, line))
@@ -41,6 +41,6 @@ data::data(string trFileName)
             Xdw(d,tmp2) = tmp4;
     }
     
-    cout<<"loading of data ends .."<<endl;
+    cout<<"loading of data ends for NPF-SGMCMC .."<<endl;
     return;
 };
